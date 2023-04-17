@@ -64,9 +64,8 @@ import java.util.List;
 import java.util.Scanner;
 
 class JokeClient {
-    private static int clientColorCount = 0;
-    private List<String> colorsSentFromClient = new ArrayList<String>();
-    private List<String> colorsRecievedFromServer = new ArrayList<String>();
+    private static String userName;
+    private String jokeOrProverbFromServer;
 
     public static void main(String argv[]) {
         // Creating colorClient object here
@@ -86,70 +85,57 @@ class JokeClient {
         } else {
             servername = args[0];
         }
-
-        String colorFromClient = "";
         Scanner consoleIn = new Scanner(System.in);
         // Take inputs from user
         System.out.print("Enter your name: ");
         System.out.flush();
-        String userName = consoleIn.nextLine();
+        userName = consoleIn.nextLine();
         System.out.println("Hi " + userName);
+        String userInput;
         do {
-            System.out.print("Enter a color, or quit to end: ");
-            colorFromClient = consoleIn.nextLine();
-            if (colorFromClient.indexOf("quit") < 0) { // Client enters a color
-                getColor(userName, colorFromClient, servername);
+            System.out.print("Press \"Enter\" to get a joke or proverb, or quit to end: ");
+            userInput = consoleIn.nextLine();
+            if (userInput != null) {
+                if (userInput.indexOf("quit") < 0) { // Client pressed Enter
+                    getJokeOrProverb(userName, servername);
+                }
             }
-        } while (colorFromClient.indexOf("quit") < 0); // Asks user for a color until user enters quit
+        } while (userInput.indexOf("quit") < 0); // Asks user for a color until user enters quit
         System.out.println("Cancelled by user request.");
-        System.out.println(userName + ", You sent and received " + clientColorCount + " colors.");
-        //System.out.println(colorsSentFromClient.toString());
-        // OPTIONAL FOR FUN CODE GOES HERE: Storing the back and forth colors in colorsRecievedFromServer and colorSentFromClient and showing it after user enters quit
-        for (int index =0;index < colorsRecievedFromServer.size();index++) {
-            System.out.println("Color " + (index+1) + " You sent "+ colorsSentFromClient.get(index) + ". You received "+colorsRecievedFromServer.get(index));
-        }
     }
 
-    void getColor(String userName, String colorFromClient, String serverName) {
+    void getJokeOrProverb(String userName, String serverName) {
         try {
             // Setting all the colordata here
-            ColorData colorData = new ColorData();
-            colorData.userName = userName;
-            colorData.colorSent = colorFromClient;
-            colorData.colorCount = clientColorCount;
-            colorData.colorsRecievedFromServer = colorsRecievedFromServer;
-            colorData.colorsSentFromClient = colorsSentFromClient;
+            NetworkData networkData = new NetworkData();
+            networkData.userName = userName;
 
             // Creating a socket connection below
             // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
-            Socket socket = new Socket(serverName, 45565);
-            System.out.println("\nWe have successfully connected to the ColorServer at port 45,565");
+            int primaryPort = 4545;
+            Socket socket = new Socket(serverName, primaryPort);
+            System.out.println("\nWe have successfully connected to the ColorServer at port "+primaryPort);
 
             OutputStream outputStream = socket.getOutputStream(); // Get output stream from socket
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream); // Serializing the object here
 
-            objectOutputStream.writeObject(colorData); // Pass the serialized object to the network
-            System.out.println("We have send the serialized values to the ColorServer's server socket");
+            objectOutputStream.writeObject(networkData); // Pass the serialized object to the network
+            System.out.println("We have send the serialized values to the JokeServer's server socket");
 
             InputStream inStream = socket.getInputStream(); // Get input stream from server
             ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
-            ColorData inObject = (ColorData) objectInputStream.readObject(); // Reading the input stream from server
+            NetworkData inObject = (NetworkData) objectInputStream.readObject(); // Reading the input stream from server
 
             // Assigning the count and colors to state variables
-            clientColorCount = inObject.colorCount;
-            colorsRecievedFromServer = inObject.colorsRecievedFromServer;
-            colorsSentFromClient = inObject.colorsSentFromClient;
+            jokeOrProverbFromServer = inObject.jokeOrProverbSentBack;
 
             // Displaying all the information here
             System.out.println("\nFROM THE SERVER:");
-            System.out.println(inObject.messageToClient);
-            System.out.println("The joke sent back is: " + inObject.jokeSentBack);
-            System.out.println("The color count is: " + inObject.colorCount + "\n");
-
+            System.out.println("The joke sent back is: " + inObject.jokeOrProverbSentBack);
             System.out.println("Closing the connection to the server.\n");
             socket.close(); // Closing the socket connection
         } catch(ConnectException connectException) {
-            System.out.println("\nOh no. The ColorServer refused our connection! Is it running?\n");
+            System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
             connectException.printStackTrace();
         }catch (UnknownHostException unknownHostException) {
             System.out.println("\nUnknown Host problem.\n");
@@ -184,42 +170,42 @@ class JokeClientAdmin {
         }
         Scanner consoleIn = new Scanner(System.in);
         // Take inputs from user
-        System.out.print("### Joke Client Admin ###");
-        String colorFromClient;
+        System.out.print("### Hello Joke Client Admin ###");
+        String userInput;
         do {
-            System.out.print("Enter a color, or quit to end: ");
-            colorFromClient = consoleIn.nextLine();
-            if (colorFromClient.indexOf("quit") < 0) { // Client enters a color
-                connectToServer(colorFromClient, servername);
+            System.out.print("Press \"Enter\" to change Server mode, or quit to end: ");
+            userInput = consoleIn.nextLine();
+            if(userInput!=null) {
+                if (userInput.indexOf("quit") < 0) { // Client Admin pressed Enter
+                    connectToServer(servername);
+                }
             }
-        } while (colorFromClient.indexOf("quit") < 0); // Asks user for a color until user enters quit
+        } while (userInput.indexOf("quit") < 0); // Asks user for a color until user enters quit
         System.out.println("Cancelled by user request.");
     }
 
-    void connectToServer(String colorFromClient, String serverName) {
+    void connectToServer(String serverName) {
         try {
 
             // Creating a socket connection below
             // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
             Socket socket = new Socket(serverName, 5050);
-            System.out.println("\nWe have successfully connected to the JokeServer at port 5,050");
+            System.out.println("\nWe have successfully connected to the JokeServer at port 5050");
 
             InputStream inStream = socket.getInputStream(); // Get input stream from server
             ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
             AdminData inObject = (AdminData) objectInputStream.readObject(); // Reading the input stream from server
 
-            // Assigning the count and colors to state variables
+            // Assigning the mode to state variables
             currentMode = inObject.mode;
 
             // Displaying all the information here
             System.out.println("\nFROM THE SERVER:");
-            System.out.println(inObject.mode);
             System.out.println("Current mode is : " + inObject.mode);
-
             System.out.println("Closing the connection to the server.\n");
             socket.close(); // Closing the socket connection
         } catch(ConnectException connectException) {
-            System.out.println("\nOh no. The ColorServer refused our connection! Is it running?\n");
+            System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
             connectException.printStackTrace();
         }catch (UnknownHostException unknownHostException) {
             System.out.println("\nUnknown Host problem.\n");
@@ -236,14 +222,9 @@ class AdminData implements Serializable {
     String mode;
 }
 
-class ColorData implements Serializable {
+class NetworkData implements Serializable {
     String userName;
-    String colorSent;
-    String jokeSentBack;
-    String messageToClient;
-    int colorCount;
-    List<String> colorsSentFromClient = new ArrayList<String>();
-    List<String> colorsRecievedFromServer = new ArrayList<String>();
+    String jokeOrProverbSentBack;
 }
 
 class JokeWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
@@ -259,23 +240,17 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
             InputStream inputStream = socket.getInputStream();
             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
 
-            ColorData inObject = (ColorData) objectInputStream.readObject(); // Reading the colordata object from client
+            NetworkData inObject = (NetworkData) objectInputStream.readObject(); // Reading the colordata object from client
 
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
             System.out.println("\nFROM THE CLIENT:\n");
             System.out.println("Username: " + inObject.userName);
-            System.out.println("Color sent from the client: " + inObject.colorSent);
-            System.out.println("Connections count (State!): " + (inObject.colorCount + 1));
 
-            // Get random color and pass it back to client. Changing the state values.
-            inObject.jokeSentBack = getJoke();
-            inObject.colorCount++;
-            inObject.colorsSentFromClient.add(inObject.colorSent);
-            inObject.colorsRecievedFromServer.add(inObject.jokeSentBack);
-            inObject.messageToClient = String.format("Thanks %s for sending the color %s", inObject.userName, inObject.colorSent);
-
+            // Get random joke or proverb and pass it back to client. Changing the state values.
+            inObject.jokeOrProverbSentBack = getJoke();
+            System.out.println("Joke is "+inObject.jokeOrProverbSentBack);
             objectOutputStream.writeObject(inObject); // Send the data back to client
 
             System.out.println("Closing the client socket connection...");
@@ -294,13 +269,33 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
     }
 }
 
-class JokeClientAdminWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
-    Socket socket; // Class member - socket
+class ToggleMode{
+    int Mode = 0;
 
+    public int SetMode () {
+        if (Mode==0) {Mode = 1;}
+        else {Mode = 0;}
+        return (Mode);
+    }
+
+    public int GetMode () {
+        return (Mode);
+    }
+
+}
+
+class JokeClientAdminWorker implements Runnable { // Class definition. Extending Thread because these worker threads may run simultaneously
+    Socket socket; // Class member - socket
     JokeClientAdminWorker(Socket s) {
         this.socket = s;
     }
+    ToggleMode mode;
 
+    public JokeClientAdminWorker(ToggleMode mode) {
+        this.mode = mode;
+    }
+
+    @Override
     public void run() {
         try {
             // Get input output object streams from the socket then read the streams and deserialize the object that is sent from the client.
@@ -312,8 +307,13 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
-            // Get random color and pass it back to client. Changing the state values.
-            inObject.mode = "Joke";
+            mode.SetMode();
+            if(mode.GetMode()==0) {
+                inObject.mode = "Joke";
+            }
+            else {
+                inObject.mode = "Proverb";
+            }
 
             objectOutputStream.writeObject(inObject); // Send the data back to client
             System.out.println("Current mode is : "+inObject.mode);
@@ -327,19 +327,16 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
             classNotFoundException.printStackTrace(); // This class is defined in server code
         }
     }
-
-    String getJoke() {
-        return "Sample Joke";
-    }
 }
 
 public class JokeServer {
     public static void main(String[] args) throws Exception {
         int queueLen = 6; // Number of simultaneous requests for Operating System to queue
-        int serverPort = 45565;
+        int serverPort = 4545;
         int jokeServerPort = 5050;
         Socket socket;
         Socket jokeClientAdminSocket;
+        ToggleMode mode = new ToggleMode();
 
         System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
         System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client Admin at port  " + jokeServerPort + ".\n");
@@ -355,7 +352,8 @@ public class JokeServer {
             System.out.println("Connection from " + socket);
             System.out.println("Connection from " + jokeClientAdminSocket);
             new JokeWorker(socket).start();
-            new JokeClientAdminWorker(jokeClientAdminSocket).start();
+            Thread thread = new Thread(new JokeClientAdminWorker(mode));
+            thread.start();
         }
     }
 }
