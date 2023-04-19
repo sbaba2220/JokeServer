@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Basic jokeserver, client and clientadmin added">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Able to get one joke from server to client.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JokeServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/JokeServer.java" afterDir="false" />
     </list>
@@ -47,7 +46,14 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="Application.JokeClientAdmin">
+  <component name="RunManager" selected="Application.JokeClient">
+    <configuration name="JokeClient (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="JokeClient" />
+      <module name="JokeServer" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="JokeClient" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="JokeClient" />
       <module name="JokeServer" />
@@ -73,7 +79,13 @@
       <item itemvalue="Application.JokeServer" />
       <item itemvalue="Application.JokeClient" />
       <item itemvalue="Application.JokeClientAdmin" />
+      <item itemvalue="Application.JokeClient (1)" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.JokeClient (1)" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -84,7 +96,7 @@
       <option name="presentableId" value="Default" />
       <updated>1681615141442</updated>
       <workItem from="1681615142653" duration="3659000" />
-      <workItem from="1681696887348" duration="2137000" />
+      <workItem from="1681696887348" duration="8017000" />
     </task>
     <task id="LOCAL-00001" summary="Basic jokeserver, client and clientadmin added">
       <created>1681620519917</created>
@@ -93,7 +105,14 @@
       <option name="project" value="LOCAL" />
       <updated>1681620519917</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Able to get one joke from server to client.">
+      <created>1681699076993</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1681699076993</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -129,6 +148,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Basic jokeserver, client and clientadmin added" />
-    <option name="LAST_COMMIT_MESSAGE" value="Basic jokeserver, client and clientadmin added" />
+    <MESSAGE value="Able to get one joke from server to client." />
+    <option name="LAST_COMMIT_MESSAGE" value="Able to get one joke from server to client." />
   </component>
 </project>

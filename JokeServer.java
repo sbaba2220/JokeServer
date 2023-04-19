@@ -57,6 +57,7 @@ Also: Hughes, Shoffner and Winslow for Inet code.
 --------------------
 
 */
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ class JokeClient {
     private String jokeOrProverbFromServer;
 
     public static void main(String argv[]) {
-        // Creating colorClient object here
+        // Creating JokeClient object here
         JokeClient jokeClient = new JokeClient(argv);
         jokeClient.run(argv);
     }
@@ -114,7 +115,7 @@ class JokeClient {
             // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
             int primaryPort = 4545;
             Socket socket = new Socket(serverName, primaryPort);
-            System.out.println("\nWe have successfully connected to the ColorServer at port "+primaryPort);
+            System.out.println("\nWe have successfully connected to the ColorServer at port " + primaryPort);
 
             OutputStream outputStream = socket.getOutputStream(); // Get output stream from socket
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream); // Serializing the object here
@@ -134,10 +135,10 @@ class JokeClient {
             System.out.println("The joke sent back is: " + inObject.jokeOrProverbSentBack);
             System.out.println("Closing the connection to the server.\n");
             socket.close(); // Closing the socket connection
-        } catch(ConnectException connectException) {
+        } catch (ConnectException connectException) {
             System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
             connectException.printStackTrace();
-        }catch (UnknownHostException unknownHostException) {
+        } catch (UnknownHostException unknownHostException) {
             System.out.println("\nUnknown Host problem.\n");
             unknownHostException.printStackTrace();
         } catch (IOException ioException) {
@@ -150,6 +151,7 @@ class JokeClient {
 
 class JokeClientAdmin {
     private String currentMode;
+
     public static void main(String argv[]) {
         // Creating colorClient object here
         JokeClientAdmin jokeClientAdmin = new JokeClientAdmin(argv);
@@ -175,7 +177,7 @@ class JokeClientAdmin {
         do {
             System.out.print("Press \"Enter\" to change Server mode, or quit to end: ");
             userInput = consoleIn.nextLine();
-            if(userInput!=null) {
+            if (userInput != null) {
                 if (userInput.indexOf("quit") < 0) { // Client Admin pressed Enter
                     connectToServer(servername);
                 }
@@ -186,28 +188,23 @@ class JokeClientAdmin {
 
     void connectToServer(String serverName) {
         try {
-
-            // Creating a socket connection below
-            // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
             Socket socket = new Socket(serverName, 5050);
             System.out.println("\nWe have successfully connected to the JokeServer at port 5050");
 
-            InputStream inStream = socket.getInputStream(); // Get input stream from server
+            InputStream inStream = socket.getInputStream();
             ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
-            AdminData inObject = (AdminData) objectInputStream.readObject(); // Reading the input stream from server
+            AdminData inObject = (AdminData) objectInputStream.readObject();
 
-            // Assigning the mode to state variables
             currentMode = inObject.mode;
 
-            // Displaying all the information here
             System.out.println("\nFROM THE SERVER:");
-            System.out.println("Current mode is : " + inObject.mode);
+            System.out.println("Mode changed to : " + inObject.mode);
             System.out.println("Closing the connection to the server.\n");
-            socket.close(); // Closing the socket connection
-        } catch(ConnectException connectException) {
+            socket.close();
+        } catch (ConnectException connectException) {
             System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
             connectException.printStackTrace();
-        }catch (UnknownHostException unknownHostException) {
+        } catch (UnknownHostException unknownHostException) {
             System.out.println("\nUnknown Host problem.\n");
             unknownHostException.printStackTrace();
         } catch (IOException ioException) {
@@ -250,7 +247,7 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
 
             // Get random joke or proverb and pass it back to client. Changing the state values.
             inObject.jokeOrProverbSentBack = getJoke();
-            System.out.println("Joke is "+inObject.jokeOrProverbSentBack);
+            System.out.println("Joke is " + inObject.jokeOrProverbSentBack);
             objectOutputStream.writeObject(inObject); // Send the data back to client
 
             System.out.println("Closing the client socket connection...");
@@ -269,62 +266,81 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
     }
 }
 
-class ToggleMode{
+class ToggleMode {
     int Mode = 0;
 
-    public int SetMode () {
-        if (Mode==0) {Mode = 1;}
-        else {Mode = 0;}
+    public int SetMode() {
+        if (Mode == 0) {
+            Mode = 1;
+        } else {
+            Mode = 0;
+        }
         return (Mode);
     }
 
-    public int GetMode () {
+    public int GetMode() {
         return (Mode);
     }
 
 }
 
-class JokeClientAdminWorker implements Runnable { // Class definition. Extending Thread because these worker threads may run simultaneously
-    Socket socket; // Class member - socket
-    JokeClientAdminWorker(Socket s) {
-        this.socket = s;
+class AdminLooper implements Runnable {
+    public static boolean adminControlSwitch = true;
+    ToggleMode mode = new ToggleMode();
+
+    public void run() {
+        System.out.println("In the admin looper thread");
+
+        int q_len = 6; /* Number of requests for OpSys to queue */
+        int port = 5050;  // We are listening at a different port for Admin clients
+        Socket sock;
+
+        try {
+            ServerSocket servsock = new ServerSocket(port, q_len);
+            while (adminControlSwitch) {
+                // wait for the next ADMIN client connection:
+                sock = servsock.accept();
+                new JokeClientAdminWorker(sock, mode).start();
+            }
+        } catch (IOException ioe) {
+            System.out.println(ioe);
+        }
     }
+}
+
+class JokeClientAdminWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
+    Socket socket;
     ToggleMode mode;
 
-    public JokeClientAdminWorker(ToggleMode mode) {
+    JokeClientAdminWorker(Socket s, ToggleMode mode) {
+        System.out.println("Is it reached here 2");
+        this.socket = s;
         this.mode = mode;
     }
 
-    @Override
     public void run() {
         try {
-            // Get input output object streams from the socket then read the streams and deserialize the object that is sent from the client.
-            InputStream inputStream = socket.getInputStream();
-            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-
-            AdminData inObject = (AdminData) objectInputStream.readObject(); // Reading the colordata object from client
+            AdminData inObject = new AdminData();
 
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
+            //System.out.println(mode.GetMode());
             mode.SetMode();
-            if(mode.GetMode()==0) {
+            if (mode.GetMode() == 0) {
                 inObject.mode = "Joke";
-            }
-            else {
+            } else {
                 inObject.mode = "Proverb";
             }
 
             objectOutputStream.writeObject(inObject); // Send the data back to client
-            System.out.println("Current mode is : "+inObject.mode);
+            System.out.println("Mode changed to : " + inObject.mode);
             System.out.println("Closing the client socket connection...");
             socket.close();
 
         } catch (IOException inpIoException) {
             System.out.println("Server error.");
             inpIoException.printStackTrace();
-        } catch (ClassNotFoundException classNotFoundException) {
-            classNotFoundException.printStackTrace(); // This class is defined in server code
         }
     }
 }
@@ -333,27 +349,23 @@ public class JokeServer {
     public static void main(String[] args) throws Exception {
         int queueLen = 6; // Number of simultaneous requests for Operating System to queue
         int serverPort = 4545;
-        int jokeServerPort = 5050;
         Socket socket;
-        Socket jokeClientAdminSocket;
-        ToggleMode mode = new ToggleMode();
 
         System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
-        System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client Admin at port  " + jokeServerPort + ".\n");
 
         // Listen for connections at port ServerPort. Doorbell socket
-        ServerSocket serverSocket = new ServerSocket(serverPort,queueLen);
-        ServerSocket jokeClientAdminServerSocket = new ServerSocket(jokeServerPort,queueLen);
+        ServerSocket serverSocket = new ServerSocket(serverPort, queueLen);
         System.out.println("ServerSocket awaiting connections..."); // Waiting for the client to ring the bell
 
-        while(true) { // Use Ctrl C to manually terminate the server
+        AdminLooper AL = new AdminLooper();
+        Thread t = new Thread(AL);
+        t.start();
+
+        while (true) { // Use Ctrl C to manually terminate the server
             socket = serverSocket.accept(); // Answer the client connection
-            jokeClientAdminSocket = jokeClientAdminServerSocket.accept(); // Answer the client connection
             System.out.println("Connection from " + socket);
-            System.out.println("Connection from " + jokeClientAdminSocket);
+            System.out.println("Mode is " + AL.mode.GetMode());
             new JokeWorker(socket).start();
-            Thread thread = new Thread(new JokeClientAdminWorker(mode));
-            thread.start();
         }
     }
 }
@@ -363,67 +375,6 @@ public class JokeServer {
 
 ------------------------------------ OUTPUT ------------------------------------
 
-SERVER:
-
-> java ColorServer
-Saibaba Garbham's Color Server 1.0 starting up, listening at port 45565.
-
-ServerSocket awaiting connections...
-Connection from Socket[addr=/127.0.0.1,port=64080,localport=45565]
-
-FROM THE CLIENT:
-
-Username: Saibaba
-Color sent from the client: Green
-Connections count (State!): 1
-Closing the client socket connection...
-Connection from Socket[addr=/127.0.0.1,port=64082,localport=45565]
-
-FROM THE CLIENT:
-
-Username: Saibaba
-Color sent from the client: Red
-Connections count (State!): 2
-Closing the client socket connection...
-
---------------------------------------------------------
-CLIENT:
-
-> java ColorClient
-ColorClient constructor
-Enter your name: Saibaba
-Hi Saibaba
-Enter a color, or quit to end: Green
-
-We have successfully connected to the ColorServer at port 45,565
-We have send the serialized values to the ColorServer's server socket
-
-FROM THE SERVER:
-Thanks Saibaba for sending the color Green
-The color sent back is: Green
-The color count is: 1
-
-Closing the connection to the server.
-
-Enter a color, or quit to end: Red
-
-We have successfully connected to the ColorServer at port 45,565
-We have send the serialized values to the ColorServer's server socket
-
-FROM THE SERVER:
-Thanks Saibaba for sending the color Red
-The color sent back is: Yellow
-The color count is: 2
-
-Closing the connection to the server.
-
-Enter a color, or quit to end: quit
-Cancelled by user request.
-Saibaba, You sent and received 2 colors.
-Color 1 You sent Green. You received Green
-Color 2 You sent Red. You received Yellow
-
-Process finished with exit code 0
 
 ----------------------------------------------------------
 
