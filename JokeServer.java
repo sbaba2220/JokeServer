@@ -60,12 +60,12 @@ Also: Hughes, Shoffner and Winslow for Inet code.
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 class JokeClient {
     private static String userName;
+    private int jokeIndex;
+    private int proverbIndex;
     private String jokeOrProverbFromServer;
 
     public static void main(String argv[]) {
@@ -91,6 +91,8 @@ class JokeClient {
         System.out.print("Enter your name: ");
         System.out.flush();
         userName = consoleIn.nextLine();
+        jokeIndex = 0;
+        proverbIndex = 0;
         System.out.println("Hi " + userName);
         String userInput;
         do {
@@ -110,6 +112,8 @@ class JokeClient {
             // Setting all the colordata here
             NetworkData networkData = new NetworkData();
             networkData.userName = userName;
+            networkData.jokeIndex = jokeIndex;
+            networkData.proverbIndex = proverbIndex;
 
             // Creating a socket connection below
             // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
@@ -129,10 +133,15 @@ class JokeClient {
 
             // Assigning the count and colors to state variables
             jokeOrProverbFromServer = inObject.jokeOrProverbSentBack;
+            jokeIndex = inObject.jokeIndex;
+            proverbIndex = inObject.proverbIndex;
 
             // Displaying all the information here
             System.out.println("\nFROM THE SERVER:");
             System.out.println("The joke sent back is: " + inObject.jokeOrProverbSentBack);
+            if (!inObject.messageToClient.isEmpty()) {
+                System.out.println("Message : " + inObject.messageToClient);
+            }
             System.out.println("Closing the connection to the server.\n");
             socket.close(); // Closing the socket connection
         } catch (ConnectException connectException) {
@@ -221,19 +230,36 @@ class AdminData implements Serializable {
 
 class NetworkData implements Serializable {
     String userName;
+    int jokeIndex;
+    int proverbIndex;
     String jokeOrProverbSentBack;
+    String messageToClient;
 }
 
 class JokeWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
     Socket socket; // Class member - socket
+    ToggleMode mode;
+    private static Dictionary<String, String> jokes = new Hashtable<>();
+    private static Dictionary<String, String> proverbs = new Hashtable<>();
+    private int limiter;
+    private int currentIndex;
 
-    JokeWorker(Socket s) {
+    JokeWorker(Socket s, ToggleMode mode) {
         this.socket = s;
+        this.mode = mode;
+        jokes.put("JA", "JOKE A");
+        jokes.put("JB", "JOKE B");
+        jokes.put("JC", "JOKE C");
+        jokes.put("JD", "JOKE D");
+        proverbs.put("PA", "PROVERB A");
+        proverbs.put("PB", "PROVERB B");
+        proverbs.put("PC", "PROVERB C");
+        proverbs.put("PD", "PROVERB D");
+        this.limiter = 4;
     }
 
     public void run() {
         try {
-            // Get input output object streams from the socket then read the streams and deserialize the object that is sent from the client.
             InputStream inputStream = socket.getInputStream();
             ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
 
@@ -245,9 +271,28 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
             System.out.println("\nFROM THE CLIENT:\n");
             System.out.println("Username: " + inObject.userName);
 
-            // Get random joke or proverb and pass it back to client. Changing the state values.
-            inObject.jokeOrProverbSentBack = getJoke();
-            System.out.println("Joke is " + inObject.jokeOrProverbSentBack);
+            if (this.mode.GetMode() == 0) {
+                this.currentIndex = inObject.jokeIndex;
+                inObject.jokeIndex++;
+                if(this.currentIndex==4) {
+                    this.currentIndex = 0;
+                    inObject.jokeIndex = 0;
+                }
+            } else {
+                this.currentIndex = inObject.proverbIndex;
+                inObject.proverbIndex++;
+                if(this.currentIndex==4) {
+                    this.currentIndex = 0;
+                    inObject.proverbIndex = 0;
+                }
+            }
+
+            inObject.jokeOrProverbSentBack = getJokeOrProverb(currentIndex, mode.GetMode());
+            if (currentIndex == 3) {
+                inObject.messageToClient = mode.GetMode() == 0 ? "JOKE CYCLE COMPLETED" : "PROVERB CYCLE COMPLETED";
+            } else {
+                inObject.messageToClient = "";
+            }
             objectOutputStream.writeObject(inObject); // Send the data back to client
 
             System.out.println("Closing the client socket connection...");
@@ -261,8 +306,29 @@ class JokeWorker extends Thread { // Class definition. Extending Thread because 
         }
     }
 
-    String getJoke() {
-        return "Sample Joke";
+    String getJokeOrProverb(int index, int mode) {
+        if (mode == 0) {
+            if (index == 0) {
+                return jokes.get("JA");
+            } else if (index == 1) {
+                return jokes.get("JB");
+            } else if (index == 2) {
+                return jokes.get("JC");
+            } else if (index == 3) {
+                return jokes.get("JD");
+            }
+        } else {
+            if (index == 0) {
+                return proverbs.get("PA");
+            } else if (index == 1) {
+                return proverbs.get("PB");
+            } else if (index == 2) {
+                return proverbs.get("PC");
+            } else if (index == 3) {
+                return proverbs.get("PD");
+            }
+        }
+        return "";
     }
 }
 
@@ -364,8 +430,7 @@ public class JokeServer {
         while (true) { // Use Ctrl C to manually terminate the server
             socket = serverSocket.accept(); // Answer the client connection
             System.out.println("Connection from " + socket);
-            System.out.println("Mode is " + AL.mode.GetMode());
-            new JokeWorker(socket).start();
+            new JokeWorker(socket, AL.mode).start();
         }
     }
 }

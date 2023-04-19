@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Able to get one joke from server to client.">
+    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Mode switching and using the mode in server">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JokeServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/JokeServer.java" afterDir="false" />
     </list>
@@ -42,11 +42,12 @@
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="Application.JokeClient">
+  <component name="RunManager" selected="Application.JokeServer">
     <configuration name="JokeClient (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="JokeClient" />
       <module name="JokeServer" />
@@ -96,7 +97,7 @@
       <option name="presentableId" value="Default" />
       <updated>1681615141442</updated>
       <workItem from="1681615142653" duration="3659000" />
-      <workItem from="1681696887348" duration="8017000" />
+      <workItem from="1681696887348" duration="15305000" />
     </task>
     <task id="LOCAL-00001" summary="Basic jokeserver, client and clientadmin added">
       <created>1681620519917</created>
@@ -112,7 +113,14 @@
       <option name="project" value="LOCAL" />
       <updated>1681699076993</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Mode switching and using the mode in server">
+      <created>1681931571970</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1681931571970</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -149,6 +157,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Basic jokeserver, client and clientadmin added" />
     <MESSAGE value="Able to get one joke from server to client." />
-    <option name="LAST_COMMIT_MESSAGE" value="Able to get one joke from server to client." />
+    <MESSAGE value="Mode switching and using the mode in server" />
+    <option name="LAST_COMMIT_MESSAGE" value="Mode switching and using the mode in server" />
   </component>
 </project>
