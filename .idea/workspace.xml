@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Mode switching and using the mode in server">
+    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Joke Server, Joke Client and Joke Client Admin basic working functionality">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JokeServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/JokeServer.java" afterDir="false" />
     </list>
@@ -32,21 +32,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "full.screen.before.presentation.mode": "false",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "reference.settingsdialog.IDE.editor.colors",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;full.screen.before.presentation.mode&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/SaiBaba/DePaul Study/SE 450 2/Assignment-2 Saibaba Garbham/Q2&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.IDE.editor.colors&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Application.JokeServer">
     <configuration name="JokeClient (1)" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="JokeClient" />
@@ -97,7 +98,10 @@
       <option name="presentableId" value="Default" />
       <updated>1681615141442</updated>
       <workItem from="1681615142653" duration="3659000" />
-      <workItem from="1681696887348" duration="15305000" />
+      <workItem from="1681696887348" duration="18503000" />
+      <workItem from="1682398113604" duration="2301000" />
+      <workItem from="1682426128493" duration="7107000" />
+      <workItem from="1682562017754" duration="6474000" />
     </task>
     <task id="LOCAL-00001" summary="Basic jokeserver, client and clientadmin added">
       <created>1681620519917</created>
@@ -120,7 +124,14 @@
       <option name="project" value="LOCAL" />
       <updated>1681931571970</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Joke Server, Joke Client and Joke Client Admin basic working functionality">
+      <created>1681942781910</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1681942781910</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -158,6 +169,7 @@
     <MESSAGE value="Basic jokeserver, client and clientadmin added" />
     <MESSAGE value="Able to get one joke from server to client." />
     <MESSAGE value="Mode switching and using the mode in server" />
-    <option name="LAST_COMMIT_MESSAGE" value="Mode switching and using the mode in server" />
+    <MESSAGE value="Joke Server, Joke Client and Joke Client Admin basic working functionality" />
+    <option name="LAST_COMMIT_MESSAGE" value="Joke Server, Joke Client and Joke Client Admin basic working functionality" />
   </component>
 </project>

@@ -1,4 +1,4 @@
-/* 2.0 2024-04-07 Saibaba Garbham, ColorServer.java and ColorClient.java
+/* 2.0 2024-04-07 Saibaba Garbham, JokeServer.java, JokeClient.java and JokeClientAdmin.java
 Copyright (c) 2023 by Saibaba Garbham with all rights reserved.
 
 Name: Saibaba Garbham
@@ -24,7 +24,7 @@ Terminal/CMD window 1> java ColorServer
 Terminal/CMD window 2> java ColorClient 172.16.0.98 [But use the actual IP address of the ColorServer]
 [...]
 
-Files needed: ColorServer.java, ColorClient.java
+Files needed: JokeServer.java
 
 Notes:
 
@@ -48,14 +48,6 @@ ColorClient:
 
 --------------------
 
-Thanks:
-
-https://www.comrevo.com/2019/07/Sending-objects-over-sockets-Java-example-How-to-send-serialized-object-over-network-in-Java.html (Code dated 2019-07-09, by Ramesh)
-https://rollbar.com/blog/java-socketexception/#
-Also: Hughes, Shoffner and Winslow for Inet code.
-
---------------------
-
 */
 
 import java.io.*;
@@ -66,36 +58,39 @@ class JokeClient {
     private static String userName;
     private int jokeIndex;
     private int proverbIndex;
+    private int clientId;
     private String jokeOrProverbFromServer;
 
     public static void main(String argv[]) {
-        // Creating JokeClient object here
+        // Creating jokeClient object here
         JokeClient jokeClient = new JokeClient(argv);
-        jokeClient.run(argv);
+        jokeClient.run(argv); // Calling the run method
     }
 
     public JokeClient(String args[]) {
-        System.out.println("ColorClient constructor");
+        //System.out.println("Constructor of JokeClient");
     }
 
     public void run(String args[]) {
         String servername;
-        // Reading args and setting the servername
+        // Setting the servername from args
         if (args.length < 1) {
             servername = "localhost";
         } else {
             servername = args[0];
         }
         Scanner consoleIn = new Scanner(System.in);
-        // Take inputs from user
+        // Take username from User
         System.out.print("Enter your name: ");
         System.out.flush();
         userName = consoleIn.nextLine();
         jokeIndex = 0;
         proverbIndex = 0;
+        clientId = 0;
         System.out.println("Hi " + userName);
         String userInput;
         do {
+            // Asking the user to press Enter to get a joke or proverb based on the server mode.
             System.out.print("Press \"Enter\" to get a joke or proverb, or quit to end: ");
             userInput = consoleIn.nextLine();
             if (userInput != null) {
@@ -103,46 +98,48 @@ class JokeClient {
                     getJokeOrProverb(userName, servername);
                 }
             }
-        } while (userInput.indexOf("quit") < 0); // Asks user for a color until user enters quit
-        System.out.println("Cancelled by user request.");
+        } while (userInput.indexOf("quit") < 0); // Look for joke or proverb until user enters quit
+        System.out.println("Cancelled by user request. Thank you!");
     }
 
     void getJokeOrProverb(String userName, String serverName) {
         try {
-            // Setting all the colordata here
+            // Setting the NetworkDate here
             NetworkData networkData = new NetworkData();
             networkData.userName = userName;
             networkData.jokeIndex = jokeIndex;
+            networkData.clientId = clientId;
             networkData.proverbIndex = proverbIndex;
 
-            // Creating a socket connection below
+            // Creating the socket connection below
             // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
             int primaryPort = 4545;
             Socket socket = new Socket(serverName, primaryPort);
-            System.out.println("\nWe have successfully connected to the ColorServer at port " + primaryPort);
+            //System.out.println("\n  Successful connection established with JokeServer on port " + primaryPort);
 
-            OutputStream outputStream = socket.getOutputStream(); // Get output stream from socket
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream); // Serializing the object here
+            OutputStream networkStream = socket.getOutputStream(); // Get network output stream from the socket
+            ObjectOutputStream networkStreamObject = new ObjectOutputStream(networkStream); // Object serialization goes here
 
-            objectOutputStream.writeObject(networkData); // Pass the serialized object to the network
-            System.out.println("We have send the serialized values to the JokeServer's server socket");
+            networkStreamObject.writeObject(networkData); // Pass the serialized object to the server
+            //System.out.println("    Successfully sent the serialized values to the JokeServer's server socket");
 
-            InputStream inStream = socket.getInputStream(); // Get input stream from server
-            ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
-            NetworkData inObject = (NetworkData) objectInputStream.readObject(); // Reading the input stream from server
+            InputStream networkInStream = socket.getInputStream(); // Get network input stream from joke server
+            ObjectInputStream objectInputStream = new ObjectInputStream(networkInStream);
+            NetworkData inObject = (NetworkData) objectInputStream.readObject(); // Reading the input stream from joke server
 
-            // Assigning the count and colors to state variables
+            // Assigning the joke or proverb and indexes of joke/proverb to state variables
             jokeOrProverbFromServer = inObject.jokeOrProverbSentBack;
             jokeIndex = inObject.jokeIndex;
             proverbIndex = inObject.proverbIndex;
+            clientId = inObject.clientId;
 
-            // Displaying all the information here
-            System.out.println("\nFROM THE SERVER:");
-            System.out.println("The joke sent back is: " + inObject.jokeOrProverbSentBack);
+            // Displaying joke/proverb information here
+            System.out.println(inObject.jokeOrProverbKey + " " + userName + ": " + inObject.jokeOrProverbSentBack);
+            // Displaying the cycle ends message below
             if (!inObject.messageToClient.isEmpty()) {
-                System.out.println("Message : " + inObject.messageToClient);
+                System.out.println("### " + inObject.messageToClient + " ###");
             }
-            System.out.println("Closing the connection to the server.\n");
+            //System.out.println("Closing the connection to the server.\n");
             socket.close(); // Closing the socket connection
         } catch (ConnectException connectException) {
             System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
@@ -162,9 +159,9 @@ class JokeClientAdmin {
     private String currentMode;
 
     public static void main(String argv[]) {
-        // Creating colorClient object here
+        // Creating jokeClientAdmin object here
         JokeClientAdmin jokeClientAdmin = new JokeClientAdmin(argv);
-        jokeClientAdmin.run(argv);
+        jokeClientAdmin.run(argv); // Starting here
     }
 
     public JokeClientAdmin(String args[]) {
@@ -181,34 +178,33 @@ class JokeClientAdmin {
         }
         Scanner consoleIn = new Scanner(System.in);
         // Take inputs from user
-        System.out.print("### Hello Joke Client Admin ###");
+        System.out.print("Hello Joke Client Admin");
+        System.out.println("    The initial Joke Server mode is \"Joke\"");
         String userInput;
         do {
-            System.out.print("Press \"Enter\" to change Server mode, or quit to end: ");
+            System.out.print("      Press \"Enter\" to change Server mode, or quit to end: ");
             userInput = consoleIn.nextLine();
             if (userInput != null) {
-                if (userInput.indexOf("quit") < 0) { // Client Admin pressed Enter
+                if (userInput.indexOf("quit") < 0) { // Joke Client Admin pressed Enter
                     connectToServer(servername);
                 }
             }
-        } while (userInput.indexOf("quit") < 0); // Asks user for a color until user enters quit
+        } while (userInput.indexOf("quit") < 0); // Taking the joke client admin input until the admin enters quit
         System.out.println("Cancelled by user request.");
     }
 
     void connectToServer(String serverName) {
         try {
             Socket socket = new Socket(serverName, 5050);
-            System.out.println("\nWe have successfully connected to the JokeServer at port 5050");
+            //System.out.println("\n          Successful connection established with JokeClientAdmin at port 5050");
 
             InputStream inStream = socket.getInputStream();
             ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
             AdminData inObject = (AdminData) objectInputStream.readObject();
 
             currentMode = inObject.mode;
-
-            System.out.println("\nFROM THE SERVER:");
-            System.out.println("Mode changed to : " + inObject.mode);
-            System.out.println("Closing the connection to the server.\n");
+            System.out.println("            Mode changed to : " + inObject.mode);
+            System.out.println("         Closing the connection to the server.\n");
             socket.close();
         } catch (ConnectException connectException) {
             System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
@@ -224,138 +220,141 @@ class JokeClientAdmin {
     }
 }
 
+// AdminData class to maintain the mode
 class AdminData implements Serializable {
     String mode;
 }
 
+// NetworkData class to maintain the necessary data between client and server
 class NetworkData implements Serializable {
+    int clientId;
     String userName;
     int jokeIndex;
     int proverbIndex;
     String jokeOrProverbSentBack;
+    String jokeOrProverbKey;
     String messageToClient;
 }
 
-class JokeWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
-    Socket socket; // Class member - socket
-    ToggleMode mode;
-    private static Dictionary<String, String> jokes = new Hashtable<>();
-    private static Dictionary<String, String> proverbs = new Hashtable<>();
+class JokeWorker extends Thread {
+    Socket socket;
+    ModeChanger mode;
     private int limiter;
     private int currentIndex;
+    private NetworkData inObject;
+    private ClientData clientData;
 
-    JokeWorker(Socket s, ToggleMode mode) {
+    private Dictionary<String, String> jokes = new Hashtable<>();
+    private Dictionary<String, String> proverbs = new Hashtable<>();
+
+    JokeWorker(Socket s, ModeChanger mode, Dictionary<String, String> jokes, Dictionary<String, String> proverbs, ClientData clientData, NetworkData networkData) {
         this.socket = s;
         this.mode = mode;
-        jokes.put("JA", "JOKE A");
-        jokes.put("JB", "JOKE B");
-        jokes.put("JC", "JOKE C");
-        jokes.put("JD", "JOKE D");
-        proverbs.put("PA", "PROVERB A");
-        proverbs.put("PB", "PROVERB B");
-        proverbs.put("PC", "PROVERB C");
-        proverbs.put("PD", "PROVERB D");
+        this.jokes = jokes;
+        this.proverbs = proverbs;
         this.limiter = 4;
+        this.inObject = networkData;
+        this.clientData = clientData;
     }
 
     public void run() {
         try {
-            InputStream inputStream = socket.getInputStream();
-            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-
-            NetworkData inObject = (NetworkData) objectInputStream.readObject(); // Reading the colordata object from client
 
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
-            System.out.println("\nFROM THE CLIENT:\n");
-            System.out.println("Username: " + inObject.userName);
-
+            System.out.println("Request from Username : " + inObject.userName);
+            clientData.setJokeCycleCompleted(false);
+            clientData.setProverbCycleCompleted(false);
+            inObject.messageToClient = "";
             if (this.mode.GetMode() == 0) {
                 this.currentIndex = inObject.jokeIndex;
                 inObject.jokeIndex++;
-                if(this.currentIndex==4) {
-                    this.currentIndex = 0;
+                if (inObject.jokeIndex == this.limiter) {
                     inObject.jokeIndex = 0;
+                    inObject.messageToClient = "JOKE CYCLE COMPLETED";
+                    clientData.setJokeCycleCompleted(true);
                 }
             } else {
                 this.currentIndex = inObject.proverbIndex;
                 inObject.proverbIndex++;
-                if(this.currentIndex==4) {
-                    this.currentIndex = 0;
+                if (inObject.proverbIndex == this.limiter) {
                     inObject.proverbIndex = 0;
+                    inObject.messageToClient = "PROVERB CYCLE COMPLETED";
+                    clientData.setProverbCycleCompleted(true);
                 }
             }
-
-            inObject.jokeOrProverbSentBack = getJokeOrProverb(currentIndex, mode.GetMode());
-            if (currentIndex == 3) {
-                inObject.messageToClient = mode.GetMode() == 0 ? "JOKE CYCLE COMPLETED" : "PROVERB CYCLE COMPLETED";
-            } else {
-                inObject.messageToClient = "";
-            }
+            setJokeOrProverb(currentIndex, mode.GetMode(), inObject);
+            System.out.println("CLIENT ID IN JokeWorker " + clientData.getId());
+            inObject.clientId = clientData.getId();
             objectOutputStream.writeObject(inObject); // Send the data back to client
-
-            System.out.println("Closing the client socket connection...");
+            System.out.println("    Request successfully processed");
+            //System.out.println("Closing the client socket connection...");
             socket.close();
 
         } catch (IOException inpIoException) {
             System.out.println("Server error.");
             inpIoException.printStackTrace();
-        } catch (ClassNotFoundException classNotFoundException) {
-            classNotFoundException.printStackTrace(); // This class is defined in server code
         }
     }
 
-    String getJokeOrProverb(int index, int mode) {
+    void setJokeOrProverb(int index, int mode, NetworkData inObject) {
         if (mode == 0) {
             if (index == 0) {
-                return jokes.get("JA");
+                inObject.jokeOrProverbKey = "JA";
+                inObject.jokeOrProverbSentBack = jokes.get("JA");
             } else if (index == 1) {
-                return jokes.get("JB");
+                inObject.jokeOrProverbKey = "JB";
+                inObject.jokeOrProverbSentBack = jokes.get("JB");
             } else if (index == 2) {
-                return jokes.get("JC");
+                inObject.jokeOrProverbKey = "JC";
+                inObject.jokeOrProverbSentBack = jokes.get("JC");
             } else if (index == 3) {
-                return jokes.get("JD");
+                inObject.jokeOrProverbKey = "JD";
+                inObject.jokeOrProverbSentBack = jokes.get("JD");
             }
         } else {
             if (index == 0) {
-                return proverbs.get("PA");
+                inObject.jokeOrProverbKey = "PA";
+                inObject.jokeOrProverbSentBack = proverbs.get("PA");
             } else if (index == 1) {
-                return proverbs.get("PB");
+                inObject.jokeOrProverbKey = "PB";
+                inObject.jokeOrProverbSentBack = proverbs.get("PB");
             } else if (index == 2) {
-                return proverbs.get("PC");
+                inObject.jokeOrProverbKey = "PC";
+                inObject.jokeOrProverbSentBack = proverbs.get("PC");
             } else if (index == 3) {
-                return proverbs.get("PD");
+                inObject.jokeOrProverbKey = "PD";
+                inObject.jokeOrProverbSentBack = proverbs.get("PD");
             }
         }
-        return "";
+        System.out.println("    Sent: " + inObject.jokeOrProverbKey);
     }
 }
 
-class ToggleMode {
-    int Mode = 0;
+class ModeChanger {
+    int mode = 0;
 
-    public int SetMode() {
-        if (Mode == 0) {
-            Mode = 1;
+    public int ChangeMode() {
+        if (mode == 0) {
+            mode = 1;
         } else {
-            Mode = 0;
+            mode = 0;
         }
-        return (Mode);
+        return (mode);
     }
 
     public int GetMode() {
-        return (Mode);
+        return (mode);
     }
 
 }
 
 class AdminLooper implements Runnable {
     public static boolean adminControlSwitch = true;
-    ToggleMode mode = new ToggleMode();
+    ModeChanger mode = new ModeChanger();
 
     public void run() {
-        System.out.println("In the admin looper thread");
 
         int q_len = 6; /* Number of requests for OpSys to queue */
         int port = 5050;  // We are listening at a different port for Admin clients
@@ -376,10 +375,9 @@ class AdminLooper implements Runnable {
 
 class JokeClientAdminWorker extends Thread { // Class definition. Extending Thread because these worker threads may run simultaneously
     Socket socket;
-    ToggleMode mode;
+    ModeChanger mode;
 
-    JokeClientAdminWorker(Socket s, ToggleMode mode) {
-        System.out.println("Is it reached here 2");
+    JokeClientAdminWorker(Socket s, ModeChanger mode) {
         this.socket = s;
         this.mode = mode;
     }
@@ -391,15 +389,14 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
-            //System.out.println(mode.GetMode());
-            mode.SetMode();
+            mode.ChangeMode();
             if (mode.GetMode() == 0) {
                 inObject.mode = "Joke";
             } else {
                 inObject.mode = "Proverb";
             }
 
-            objectOutputStream.writeObject(inObject); // Send the data back to client
+            objectOutputStream.writeObject(inObject); // Send the admin data back to client
             System.out.println("Mode changed to : " + inObject.mode);
             System.out.println("Closing the client socket connection...");
             socket.close();
@@ -412,14 +409,20 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
 }
 
 public class JokeServer {
+
+    private static Dictionary<String, String> jokes = new Hashtable<>();
+    private static Dictionary<String, String> proverbs = new Hashtable<>();
+    private static String[] initJokes = new String[]{"Joke A","Joke B","Joke C","Joke D"};
+    private static String[] initProverbs = new String[]{"Proverb A","Proverb B","Proverb C","Proverb D"};
+    private static List<ClientData> clients = new ArrayList<>();
+    private static int clientId = 1;
+
     public static void main(String[] args) throws Exception {
         int queueLen = 6; // Number of simultaneous requests for Operating System to queue
         int serverPort = 4545;
         Socket socket;
-
         System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
 
-        // Listen for connections at port ServerPort. Doorbell socket
         ServerSocket serverSocket = new ServerSocket(serverPort, queueLen);
         System.out.println("ServerSocket awaiting connections..."); // Waiting for the client to ring the bell
 
@@ -430,10 +433,127 @@ public class JokeServer {
         while (true) { // Use Ctrl C to manually terminate the server
             socket = serverSocket.accept(); // Answer the client connection
             System.out.println("Connection from " + socket);
-            new JokeWorker(socket, AL.mode).start();
+            InputStream inputStream = socket.getInputStream();
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            NetworkData inObject = (NetworkData) objectInputStream.readObject();
+            ClientData clientData = null;
+            boolean isClientFound = false;
+            System.out.println();
+            System.out.println("Clients length "+clients.size());
+            for (ClientData client :
+                    clients) {
+                if (inObject.clientId == client.getId()) {
+                    clientData = client;
+                    isClientFound = true;
+                }
+            }
+            System.out.println("Client found? "+isClientFound);
+            if (!isClientFound) {
+                clientData = new ClientData(clientId, inObject.userName);
+                clients.add(clientData);
+                clientId++;
+            }
+            System.out.println("InObject Client info "+inObject.clientId+"  ##  "+clients.get(0).getId());
+            System.out.println("ClientID "+clientData.getId());
+            if (clientData.getIsJokeCycleCompleted()) {
+                randomizeJokes(clientData);
+            }
+            if (clientData.getIsProverbCycleCompleted()) {
+                randomizeProverbs(clientData);
+            }
+            LoadJokesAndProverbs(clientData);
+            System.out.println("Client Data "+clientData.getId()+clientData.getName());
+            System.out.println("Client JOKE AND PROVERB CYCLE DATA"+clientData.getIsJokeCycleCompleted() + clientData.getIsProverbCycleCompleted());
+            System.out.println("JOKES ARE " + jokes.get("JA") + jokes.get("JB") + jokes.get("JC") + jokes.get("JD"));
+            new JokeWorker(socket, AL.mode, jokes, proverbs, clientData, inObject).start();
         }
     }
+
+    public static void randomizeJokes(ClientData clientData) {
+        int[] jokeOrder = new int[] {2,3,4,1};
+        clientData.setJokeOrder(jokeOrder);
+    }
+
+    public static void randomizeProverbs(ClientData clientData) {
+        int[] proverbOrder = new int[] {2,3,4,1};
+        clientData.setProverbOrder(proverbOrder);
+    }
+
+    public static void LoadJokesAndProverbs(ClientData clientData) {
+        jokes = new Hashtable<>();
+        proverbs = new Hashtable<>();
+        int[] jokeOrder = clientData.getJokeOrder();
+        int[] proverbOrder = clientData.getProverbOrder();
+        jokes.put("JA", initJokes[jokeOrder[0]-1]);
+        jokes.put("JB", initJokes[jokeOrder[1]-1]);
+        jokes.put("JC", initJokes[jokeOrder[2]-1]);
+        jokes.put("JD", initJokes[jokeOrder[3]-1]);
+        proverbs.put("PA", initProverbs[proverbOrder[0]-1]);
+        proverbs.put("PB", initProverbs[proverbOrder[1]-1]);
+        proverbs.put("PC", initProverbs[proverbOrder[2]-1]);
+        proverbs.put("PD", initProverbs[proverbOrder[3]-1]);
+    }
 }
+
+class ClientData {
+    private int id;
+    private String name;
+    private boolean isJokeCycleCompleted;
+    private boolean isProverbCycleCompleted;
+    private int[] jokeOrder;
+    private int[] proverbOrder;
+
+    public ClientData(int id, String name) {
+        this.id = id;
+        this.name = name;
+        this.isJokeCycleCompleted = false;
+        this.isProverbCycleCompleted = false;
+        this.jokeOrder = new int[] {1,2,3,4};
+        this.proverbOrder = new int[] {1,2,3,4};
+    }
+
+    public int[] getJokeOrder() {
+        return jokeOrder;
+    }
+
+    public void setJokeOrder(int[] jokeOrder) {
+        this.jokeOrder = jokeOrder;
+    }
+
+
+    public int[] getProverbOrder() {
+        return proverbOrder;
+    }
+
+    public void setProverbOrder(int[] proverbOrder) {
+        this.proverbOrder = proverbOrder;
+    }
+    public void setJokeCycleCompleted(boolean isJokeCycleCompleted) {
+        this.isJokeCycleCompleted = isJokeCycleCompleted;
+    }
+
+    public void setProverbCycleCompleted(boolean isProverbCycleCompleted) {
+        this.isProverbCycleCompleted = isProverbCycleCompleted;
+    }
+
+    public boolean getIsJokeCycleCompleted() {
+        return this.isJokeCycleCompleted;
+    }
+
+    public boolean getIsProverbCycleCompleted() {
+        return this.isProverbCycleCompleted;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public int getId() {
+        return this.id;
+    }
+
+}
+
 
 
 /*
