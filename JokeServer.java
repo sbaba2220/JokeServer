@@ -56,9 +56,11 @@ import java.util.*;
 
 class JokeClient {
     private static String userName;
-    private int jokeIndex;
-    private int proverbIndex;
-    private int clientId;
+    private UUID clientId;
+    private int s1JokeIndex;
+    private int s2JokeIndex;
+    private int s1ProverbIndex;
+    private int s2ProverbIndex;
     private String jokeOrProverbFromServer;
 
     public static void main(String argv[]) {
@@ -68,60 +70,96 @@ class JokeClient {
     }
 
     public JokeClient(String args[]) {
-        //System.out.println("Constructor of JokeClient");
+        // JokeClient Constructor
     }
 
     public void run(String args[]) {
-        String servername;
+        String firstServername = "";
+        String secondServername = "";
+        String mainServername = "";
+        boolean isSecondServer = false;
+        boolean isSecondServerExists = false;
+        int firstPort = 0;
+        int secondPort = 0;
+        int mainPort = 0;
         // Setting the servername from args
         if (args.length < 1) {
-            servername = "localhost";
-        } else {
-            servername = args[0];
+            firstServername = "localhost";
+            firstPort = 4545;
+        } else if (args.length == 1) {
+            firstServername = args[0];
+            firstPort = 4545;
+        } else if (args.length == 2) {
+            firstServername = args[0];
+            firstPort = 4545;
+            secondPort = 4546;
+            secondServername = args[1];
+            isSecondServerExists = true;
         }
         Scanner consoleIn = new Scanner(System.in);
         // Take username from User
         System.out.print("Enter your name: ");
         System.out.flush();
         userName = consoleIn.nextLine();
-        jokeIndex = 0;
-        proverbIndex = 0;
-        clientId = 0;
+        setDefaultValues();
         System.out.println("Hi " + userName);
         String userInput;
         do {
             // Asking the user to press Enter to get a joke or proverb based on the server mode.
-            System.out.print("Press \"Enter\" to get a joke or proverb, or quit to end: ");
+            System.out.print("Press \"Enter\" to get a joke or proverb, or \"s\" to switch between servers, or quit to end: ");
             userInput = consoleIn.nextLine();
             if (userInput != null) {
-                if (userInput.indexOf("quit") < 0) { // Client pressed Enter
-                    getJokeOrProverb(userName, servername);
+                if (userInput.indexOf("s") >= 0) {
+                    if (isSecondServerExists) {
+                        isSecondServer = !isSecondServer;
+                        System.out.println("Connected to second server!");
+                    } else {
+                        System.out.println("No secondary server being used");
+                    }
+                } else if (userInput.indexOf("quit") < 0) { // Client pressed Enter
+                    if (!isSecondServer) {
+                        mainServername = firstServername;
+                        mainPort = firstPort;
+                    } else {
+                        mainServername = secondServername;
+                        mainPort = secondPort;
+                    }
+                    getJokeOrProverb(userName, mainServername, mainPort, isSecondServer);
                 }
             }
         } while (userInput.indexOf("quit") < 0); // Look for joke or proverb until user enters quit
         System.out.println("Cancelled by user request. Thank you!");
     }
 
-    void getJokeOrProverb(String userName, String serverName) {
+    void setDefaultValues() {
+        clientId = UUID.randomUUID();
+        s1JokeIndex = 0;
+        s1ProverbIndex = 0;
+        s2JokeIndex = 0;
+        s2ProverbIndex = 0;
+    }
+
+    void getJokeOrProverb(String userName, String serverName, int port, boolean isSecondServer) {
         try {
             // Setting the NetworkDate here
             NetworkData networkData = new NetworkData();
             networkData.userName = userName;
-            networkData.jokeIndex = jokeIndex;
             networkData.clientId = clientId;
-            networkData.proverbIndex = proverbIndex;
+            if (!isSecondServer) {
+                networkData.jokeIndex = s1JokeIndex;
+                networkData.proverbIndex = s1ProverbIndex;
+            } else {
+                networkData.jokeIndex = s2JokeIndex;
+                networkData.proverbIndex = s2ProverbIndex;
+            }
 
             // Creating the socket connection below
-            // Socket socket = new Socket("UNKNOWNHOST", 45565); // Demonstrate the UH exception below.
-            int primaryPort = 4545;
-            Socket socket = new Socket(serverName, primaryPort);
-            //System.out.println("\n  Successful connection established with JokeServer on port " + primaryPort);
+            Socket socket = new Socket(serverName, port);
 
             OutputStream networkStream = socket.getOutputStream(); // Get network output stream from the socket
             ObjectOutputStream networkStreamObject = new ObjectOutputStream(networkStream); // Object serialization goes here
 
             networkStreamObject.writeObject(networkData); // Pass the serialized object to the server
-            //System.out.println("    Successfully sent the serialized values to the JokeServer's server socket");
 
             InputStream networkInStream = socket.getInputStream(); // Get network input stream from joke server
             ObjectInputStream objectInputStream = new ObjectInputStream(networkInStream);
@@ -129,12 +167,16 @@ class JokeClient {
 
             // Assigning the joke or proverb and indexes of joke/proverb to state variables
             jokeOrProverbFromServer = inObject.jokeOrProverbSentBack;
-            jokeIndex = inObject.jokeIndex;
-            proverbIndex = inObject.proverbIndex;
-            clientId = inObject.clientId;
+            if (!isSecondServer) {
+                s1JokeIndex = inObject.jokeIndex;
+                s1ProverbIndex = inObject.proverbIndex;
+            } else {
+                s2JokeIndex = inObject.jokeIndex;
+                s2ProverbIndex = inObject.proverbIndex;
+            }
 
             // Displaying joke/proverb information here
-            System.out.println(inObject.jokeOrProverbKey + " " + userName + ": " + inObject.jokeOrProverbSentBack);
+            System.out.println(inObject.jokeOrProverbSentBack);
             // Displaying the cycle ends message below
             if (!inObject.messageToClient.isEmpty()) {
                 System.out.println("### " + inObject.messageToClient + " ###");
@@ -220,20 +262,108 @@ class JokeClientAdmin {
     }
 }
 
-// AdminData class to maintain the mode
-class AdminData implements Serializable {
-    String mode;
-}
+public class JokeServer {
 
-// NetworkData class to maintain the necessary data between client and server
-class NetworkData implements Serializable {
-    int clientId;
-    String userName;
-    int jokeIndex;
-    int proverbIndex;
-    String jokeOrProverbSentBack;
-    String jokeOrProverbKey;
-    String messageToClient;
+    private static LinkedHashMap<String, String> jokes = new LinkedHashMap<>();
+    private static LinkedHashMap<String, String> proverbs = new LinkedHashMap<>();
+    private static LinkedHashMap<String, String> initJokes = new LinkedHashMap<>();
+    private static LinkedHashMap<String, String> initProverbs = new LinkedHashMap<>();
+    private static List<ClientData> clients = new ArrayList<>();
+    private static int maxJokesOrProverbs = 4;
+
+    public static void main(String[] args) throws Exception {
+        int queueLen = 6; // Number of simultaneous requests for Operating System to queue
+        int serverPort = 4545;
+        if(args.length == 1) {
+            serverPort = 4546;
+        }
+        Socket socket;
+        System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
+        LoadInitJokesAndProverbs();
+        ServerSocket serverSocket = new ServerSocket(serverPort, queueLen);
+        System.out.println("ServerSocket awaiting connections..."); // Waiting for the client to ring the bell
+
+        AdminLooper AL = new AdminLooper();
+        Thread t = new Thread(AL);
+        t.start();
+
+        while (true) { // Use Ctrl C to manually terminate the server
+            socket = serverSocket.accept(); // Answer the client connection
+            System.out.println("Connection from " + socket);
+            InputStream inputStream = socket.getInputStream();
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            NetworkData inObject = (NetworkData) objectInputStream.readObject();
+            ClientData clientData = null;
+            boolean isClientFound = false;
+
+            for (ClientData client :
+                    clients) {
+                if (inObject.clientId.equals(client.getId())) {
+                    clientData = client;
+                    isClientFound = true;
+                }
+            }
+            if (!isClientFound) {
+                clientData = new ClientData(inObject.clientId, inObject.userName);
+                clients.add(clientData);
+            }
+            if (clientData.getIsJokeCycleCompleted()) {
+                randomizeJokes(clientData);
+            }
+            if (clientData.getIsProverbCycleCompleted()) {
+                System.out.println("RANDOMIZING");
+                randomizeProverbs(clientData);
+            }
+            LoadJokesAndProverbs(clientData);
+            new JokeWorker(socket, AL.mode, jokes, proverbs, clientData, inObject).start();
+        }
+    }
+
+    public static void LoadInitJokesAndProverbs() {
+        initJokes.put("JA", "Joke A");
+        initJokes.put("JB", "Joke B");
+        initJokes.put("JC", "Joke C");
+        initJokes.put("JD", "Joke D");
+        initProverbs.put("PA", "Proverb A");
+        initProverbs.put("PB", "Proverb B");
+        initProverbs.put("PC", "Proverb C");
+        initProverbs.put("PD", "Proverb D");
+    }
+
+    public static void randomizeJokes(ClientData clientData) {
+        List<Integer> shuffledArray = new ArrayList<>();
+        for (int ind = 1; ind <= maxJokesOrProverbs; ind++) {
+            shuffledArray.add(ind);
+        }
+        Collections.shuffle(shuffledArray);
+        clientData.setJokeOrder(shuffledArray.stream().mapToInt(each -> each).toArray());
+    }
+
+    public static void randomizeProverbs(ClientData clientData) {
+        List<Integer> shuffledArray = new ArrayList<>();
+        for (int ind = 1; ind <= maxJokesOrProverbs; ind++) {
+            shuffledArray.add(ind);
+        }
+        Collections.shuffle(shuffledArray);
+        clientData.setProverbOrder(shuffledArray.stream().mapToInt(each -> each).toArray());
+    }
+
+    public static void LoadJokesAndProverbs(ClientData clientData) {
+        jokes = new LinkedHashMap<>();
+        proverbs = new LinkedHashMap<>();
+        int[] jokeOrder = clientData.getJokeOrder();
+        int[] proverbOrder = clientData.getProverbOrder();
+        List<String> jokeKeys = new ArrayList<>(initJokes.keySet());
+        List<String> proverbKeys = new ArrayList<>(initProverbs.keySet());
+        for (int ind = 0; ind < jokeOrder.length; ind++) {
+            String key = jokeKeys.get(jokeOrder[ind] - 1);
+            jokes.put(key, initJokes.get(key));
+        }
+        for (int ind = 0; ind < proverbOrder.length; ind++) {
+            String key = proverbKeys.get(proverbOrder[ind] - 1);
+            proverbs.put(key, initProverbs.get(key));
+        }
+    }
 }
 
 class JokeWorker extends Thread {
@@ -244,10 +374,10 @@ class JokeWorker extends Thread {
     private NetworkData inObject;
     private ClientData clientData;
 
-    private Dictionary<String, String> jokes = new Hashtable<>();
-    private Dictionary<String, String> proverbs = new Hashtable<>();
+    private LinkedHashMap<String, String> jokes = new LinkedHashMap<>();
+    private LinkedHashMap<String, String> proverbs = new LinkedHashMap<>();
 
-    JokeWorker(Socket s, ModeChanger mode, Dictionary<String, String> jokes, Dictionary<String, String> proverbs, ClientData clientData, NetworkData networkData) {
+    JokeWorker(Socket s, ModeChanger mode, LinkedHashMap<String, String> jokes, LinkedHashMap<String, String> proverbs, ClientData clientData, NetworkData networkData) {
         this.socket = s;
         this.mode = mode;
         this.jokes = jokes;
@@ -259,11 +389,9 @@ class JokeWorker extends Thread {
 
     public void run() {
         try {
-
             OutputStream outputStream = socket.getOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
 
-            System.out.println("Request from Username : " + inObject.userName);
             clientData.setJokeCycleCompleted(false);
             clientData.setProverbCycleCompleted(false);
             inObject.messageToClient = "";
@@ -284,12 +412,9 @@ class JokeWorker extends Thread {
                     clientData.setProverbCycleCompleted(true);
                 }
             }
-            setJokeOrProverb(currentIndex, mode.GetMode(), inObject);
-            System.out.println("CLIENT ID IN JokeWorker " + clientData.getId());
+            setJokeOrProverb(currentIndex, mode.GetMode(), inObject, clientData);
             inObject.clientId = clientData.getId();
             objectOutputStream.writeObject(inObject); // Send the data back to client
-            System.out.println("    Request successfully processed");
-            //System.out.println("Closing the client socket connection...");
             socket.close();
 
         } catch (IOException inpIoException) {
@@ -298,56 +423,20 @@ class JokeWorker extends Thread {
         }
     }
 
-    void setJokeOrProverb(int index, int mode, NetworkData inObject) {
+    void setJokeOrProverb(int index, int mode, NetworkData inObject, ClientData clientData) {
         if (mode == 0) {
-            if (index == 0) {
-                inObject.jokeOrProverbKey = "JA";
-                inObject.jokeOrProverbSentBack = jokes.get("JA");
-            } else if (index == 1) {
-                inObject.jokeOrProverbKey = "JB";
-                inObject.jokeOrProverbSentBack = jokes.get("JB");
-            } else if (index == 2) {
-                inObject.jokeOrProverbKey = "JC";
-                inObject.jokeOrProverbSentBack = jokes.get("JC");
-            } else if (index == 3) {
-                inObject.jokeOrProverbKey = "JD";
-                inObject.jokeOrProverbSentBack = jokes.get("JD");
-            }
+            List<String> jokeKeys = new ArrayList<>(jokes.keySet());
+            String key = jokeKeys.get(index);
+            inObject.jokeOrProverbSentBack = key + " " + inObject.userName + ": " + jokes.get(key);
+            clientData.addClientJokes(inObject.jokeOrProverbSentBack);
         } else {
-            if (index == 0) {
-                inObject.jokeOrProverbKey = "PA";
-                inObject.jokeOrProverbSentBack = proverbs.get("PA");
-            } else if (index == 1) {
-                inObject.jokeOrProverbKey = "PB";
-                inObject.jokeOrProverbSentBack = proverbs.get("PB");
-            } else if (index == 2) {
-                inObject.jokeOrProverbKey = "PC";
-                inObject.jokeOrProverbSentBack = proverbs.get("PC");
-            } else if (index == 3) {
-                inObject.jokeOrProverbKey = "PD";
-                inObject.jokeOrProverbSentBack = proverbs.get("PD");
-            }
+            List<String> proverbKeys = new ArrayList<>(proverbs.keySet());
+            String key = proverbKeys.get(index);
+            inObject.jokeOrProverbSentBack = key + " " + inObject.userName + ": " + proverbs.get(key);
+            clientData.addClientProverb(inObject.jokeOrProverbSentBack);
         }
-        System.out.println("    Sent: " + inObject.jokeOrProverbKey);
+        System.out.println(inObject.jokeOrProverbSentBack);
     }
-}
-
-class ModeChanger {
-    int mode = 0;
-
-    public int ChangeMode() {
-        if (mode == 0) {
-            mode = 1;
-        } else {
-            mode = 0;
-        }
-        return (mode);
-    }
-
-    public int GetMode() {
-        return (mode);
-    }
-
 }
 
 class AdminLooper implements Runnable {
@@ -408,108 +497,25 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
     }
 }
 
-public class JokeServer {
-
-    private static Dictionary<String, String> jokes = new Hashtable<>();
-    private static Dictionary<String, String> proverbs = new Hashtable<>();
-    private static String[] initJokes = new String[]{"Joke A","Joke B","Joke C","Joke D"};
-    private static String[] initProverbs = new String[]{"Proverb A","Proverb B","Proverb C","Proverb D"};
-    private static List<ClientData> clients = new ArrayList<>();
-    private static int clientId = 1;
-
-    public static void main(String[] args) throws Exception {
-        int queueLen = 6; // Number of simultaneous requests for Operating System to queue
-        int serverPort = 4545;
-        Socket socket;
-        System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
-
-        ServerSocket serverSocket = new ServerSocket(serverPort, queueLen);
-        System.out.println("ServerSocket awaiting connections..."); // Waiting for the client to ring the bell
-
-        AdminLooper AL = new AdminLooper();
-        Thread t = new Thread(AL);
-        t.start();
-
-        while (true) { // Use Ctrl C to manually terminate the server
-            socket = serverSocket.accept(); // Answer the client connection
-            System.out.println("Connection from " + socket);
-            InputStream inputStream = socket.getInputStream();
-            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-            NetworkData inObject = (NetworkData) objectInputStream.readObject();
-            ClientData clientData = null;
-            boolean isClientFound = false;
-            System.out.println();
-            System.out.println("Clients length "+clients.size());
-            for (ClientData client :
-                    clients) {
-                if (inObject.clientId == client.getId()) {
-                    clientData = client;
-                    isClientFound = true;
-                }
-            }
-            System.out.println("Client found? "+isClientFound);
-            if (!isClientFound) {
-                clientData = new ClientData(clientId, inObject.userName);
-                clients.add(clientData);
-                clientId++;
-            }
-            System.out.println("InObject Client info "+inObject.clientId+"  ##  "+clients.get(0).getId());
-            System.out.println("ClientID "+clientData.getId());
-            if (clientData.getIsJokeCycleCompleted()) {
-                randomizeJokes(clientData);
-            }
-            if (clientData.getIsProverbCycleCompleted()) {
-                randomizeProverbs(clientData);
-            }
-            LoadJokesAndProverbs(clientData);
-            System.out.println("Client Data "+clientData.getId()+clientData.getName());
-            System.out.println("Client JOKE AND PROVERB CYCLE DATA"+clientData.getIsJokeCycleCompleted() + clientData.getIsProverbCycleCompleted());
-            System.out.println("JOKES ARE " + jokes.get("JA") + jokes.get("JB") + jokes.get("JC") + jokes.get("JD"));
-            new JokeWorker(socket, AL.mode, jokes, proverbs, clientData, inObject).start();
-        }
-    }
-
-    public static void randomizeJokes(ClientData clientData) {
-        int[] jokeOrder = new int[] {2,3,4,1};
-        clientData.setJokeOrder(jokeOrder);
-    }
-
-    public static void randomizeProverbs(ClientData clientData) {
-        int[] proverbOrder = new int[] {2,3,4,1};
-        clientData.setProverbOrder(proverbOrder);
-    }
-
-    public static void LoadJokesAndProverbs(ClientData clientData) {
-        jokes = new Hashtable<>();
-        proverbs = new Hashtable<>();
-        int[] jokeOrder = clientData.getJokeOrder();
-        int[] proverbOrder = clientData.getProverbOrder();
-        jokes.put("JA", initJokes[jokeOrder[0]-1]);
-        jokes.put("JB", initJokes[jokeOrder[1]-1]);
-        jokes.put("JC", initJokes[jokeOrder[2]-1]);
-        jokes.put("JD", initJokes[jokeOrder[3]-1]);
-        proverbs.put("PA", initProverbs[proverbOrder[0]-1]);
-        proverbs.put("PB", initProverbs[proverbOrder[1]-1]);
-        proverbs.put("PC", initProverbs[proverbOrder[2]-1]);
-        proverbs.put("PD", initProverbs[proverbOrder[3]-1]);
-    }
-}
-
 class ClientData {
-    private int id;
+    private UUID id;
     private String name;
     private boolean isJokeCycleCompleted;
     private boolean isProverbCycleCompleted;
     private int[] jokeOrder;
     private int[] proverbOrder;
+    private List<String> clientJokes;
+    private List<String> clientProverbs;
 
-    public ClientData(int id, String name) {
+    public ClientData(UUID id, String name) {
         this.id = id;
         this.name = name;
         this.isJokeCycleCompleted = false;
         this.isProverbCycleCompleted = false;
-        this.jokeOrder = new int[] {1,2,3,4};
-        this.proverbOrder = new int[] {1,2,3,4};
+        this.jokeOrder = new int[]{1, 2, 3, 4};
+        this.proverbOrder = new int[]{1, 2, 3, 4};
+        this.clientJokes = new ArrayList<>();
+        this.clientProverbs = new ArrayList<>();
     }
 
     public int[] getJokeOrder() {
@@ -528,6 +534,7 @@ class ClientData {
     public void setProverbOrder(int[] proverbOrder) {
         this.proverbOrder = proverbOrder;
     }
+
     public void setJokeCycleCompleted(boolean isJokeCycleCompleted) {
         this.isJokeCycleCompleted = isJokeCycleCompleted;
     }
@@ -548,12 +555,59 @@ class ClientData {
         return this.name;
     }
 
-    public int getId() {
+    public UUID getId() {
         return this.id;
     }
 
+    public List<String> getClientJokes() {
+        return this.clientJokes;
+    }
+
+    public List<String> getClientProverbs() {
+        return this.clientProverbs;
+    }
+
+    public void addClientJokes(String joke) {
+        this.clientJokes.add(joke);
+    }
+
+    public void addClientProverb(String proverb) {
+        this.clientJokes.add(proverb);
+    }
 }
 
+
+// AdminData class to maintain the mode
+class AdminData implements Serializable {
+    String mode;
+}
+
+// NetworkData class to maintain the necessary data between client and server
+class NetworkData implements Serializable {
+    UUID clientId;
+    String userName;
+    int jokeIndex;
+    int proverbIndex;
+    String jokeOrProverbSentBack;
+    String messageToClient;
+}
+
+class ModeChanger {
+    int mode = 0;
+
+    public int ChangeMode() {
+        if (mode == 0) {
+            mode = 1;
+        } else {
+            mode = 0;
+        }
+        return (mode);
+    }
+
+    public int GetMode() {
+        return (mode);
+    }
+}
 
 
 /*
