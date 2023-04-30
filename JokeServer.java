@@ -359,14 +359,14 @@ public class JokeServer {
     }
 
     public static void LoadInitJokesAndProverbs() {
-        initJokes.put("JA", "Joke A");
-        initJokes.put("JB", "Joke B");
-        initJokes.put("JC", "Joke C");
-        initJokes.put("JD", "Joke D");
-        initProverbs.put("PA", "Proverb A");
-        initProverbs.put("PB", "Proverb B");
-        initProverbs.put("PC", "Proverb C");
-        initProverbs.put("PD", "Proverb D");
+        initJokes.put("JA", "An SQL query goes into a bar, walks up to two tables and asks: \"Can I join you?\"");
+        initJokes.put("JB", "Why do Java programmers have to wear glasses? Because they don’t C#.");
+        initJokes.put("JC", "The best thing about a Boolean is that even if you are wrong, you are only off by a bit.");
+        initJokes.put("JD", "\"Debugging\" is like being the detective in a crime drama where you are also the murderer.");
+        initProverbs.put("PA", "First, solve the problem. Then, write the code.");
+        initProverbs.put("PB", "Experience is the name everyone gives to their mistakes.");
+        initProverbs.put("PC", "In order to be irreplaceable, one must always be different");
+        initProverbs.put("PD", "Make it work, make it right, make it fast.");
     }
 
     public static void randomizeJokes(ClientData clientData) {
@@ -559,8 +559,8 @@ class ClientData {
     public ClientData(UUID id, String name) {
         this.id = id;
         this.name = name;
-        this.isJokeCycleCompleted = false;
-        this.isProverbCycleCompleted = false;
+        this.isJokeCycleCompleted = true;
+        this.isProverbCycleCompleted = true;
         this.jokeOrder = new int[]{1, 2, 3, 4};
         this.proverbOrder = new int[]{1, 2, 3, 4};
         this.clientJokes = new ArrayList<>();

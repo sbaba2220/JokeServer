@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Code cleanup, Jokes and Proverbs randmization, Multiple servers and clients.">
+    <list default="true" id="bd6717cb-0c77-441e-ac5d-fa02565dee10" name="Changes" comment="Finished with all requirements">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/JokeServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/JokeServer.java" afterDir="false" />
     </list>
@@ -103,7 +103,7 @@
       <workItem from="1682426128493" duration="7107000" />
       <workItem from="1682562017754" duration="6536000" />
       <workItem from="1682635465351" duration="618000" />
-      <workItem from="1682709188356" duration="16615000" />
+      <workItem from="1682709188356" duration="17202000" />
     </task>
     <task id="LOCAL-00001" summary="Basic jokeserver, client and clientadmin added">
       <created>1681620519917</created>
@@ -147,7 +147,14 @@
       <option name="project" value="LOCAL" />
       <updated>1682785231644</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Finished with all requirements">
+      <created>1682813347447</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1682813347447</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -188,6 +195,7 @@
     <MESSAGE value="Joke Server, Joke Client and Joke Client Admin basic working functionality" />
     <MESSAGE value="Randomization logic handled" />
     <MESSAGE value="Code cleanup, Jokes and Proverbs randmization, Multiple servers and clients." />
-    <option name="LAST_COMMIT_MESSAGE" value="Code cleanup, Jokes and Proverbs randmization, Multiple servers and clients." />
+    <MESSAGE value="Finished with all requirements" />
+    <option name="LAST_COMMIT_MESSAGE" value="Finished with all requirements" />
   </component>
 </project>
