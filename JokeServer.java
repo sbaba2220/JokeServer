@@ -96,6 +96,11 @@ class JokeClient {
             secondServername = args[1];
             isSecondServerExists = true;
         }
+        System.out.print("Server one: " + firstServername + ", port " + firstPort);
+        if (isSecondServerExists) {
+            System.out.println(" Server two: " + secondServername + ", port " + secondPort);
+        }
+        System.out.println();
         Scanner consoleIn = new Scanner(System.in);
         // Take username from User
         System.out.print("Enter your name: ");
@@ -112,7 +117,8 @@ class JokeClient {
                 if (userInput.indexOf("s") >= 0) {
                     if (isSecondServerExists) {
                         isSecondServer = !isSecondServer;
-                        System.out.println("Connected to second server!");
+                        String displayMessage = String.format("Now communicating with: " + (isSecondServer ? (secondServername + ", port " + secondPort) : (firstServername + ", port " + firstPort)));
+                        System.out.println(displayMessage);
                     } else {
                         System.out.println("No secondary server being used");
                     }
@@ -206,47 +212,77 @@ class JokeClientAdmin {
         jokeClientAdmin.run(argv); // Starting here
     }
 
-    public JokeClientAdmin(String args[]) {
-        System.out.println("JokeClientAdmin constructor");
-    }
+    public JokeClientAdmin(String args[]) { }
 
     public void run(String args[]) {
-        String servername;
-        // Reading args and setting the servername
+        String firstServername = "";
+        String secondServername = "";
+        String mainServername = "";
+        boolean isSecondServer = false;
+        boolean isSecondServerExists = false;
+        int firstPort = 0;
+        int secondPort = 0;
+        int mainPort = 0;
+        // Setting the servername from args
         if (args.length < 1) {
-            servername = "localhost";
-        } else {
-            servername = args[0];
+            firstServername = "localhost";
+            firstPort = 5050;
+        } else if (args.length == 1) {
+            firstServername = args[0];
+            firstPort = 5050;
+        } else if (args.length == 2) {
+            firstServername = args[0];
+            firstPort = 5050;
+            secondServername = args[1];
+            secondPort = 5051;
+            isSecondServerExists = true;
         }
+        System.out.print("Server one: " + firstServername + ", port " + firstPort);
+        if (isSecondServerExists) {
+            System.out.println(" Server two: " + secondServername + ", port " + secondPort);
+        }
+        System.out.println();
         Scanner consoleIn = new Scanner(System.in);
         // Take inputs from user
-        System.out.print("Hello Joke Client Admin");
-        System.out.println("    The initial Joke Server mode is \"Joke\"");
+        System.out.println("The initial Joke Server mode is \"Joke\"");
         String userInput;
         do {
-            System.out.print("      Press \"Enter\" to change Server mode, or quit to end: ");
+            System.out.print("Press \"Enter\" to change Server mode, or \"s\" to change the server, or quit to end: ");
             userInput = consoleIn.nextLine();
             if (userInput != null) {
-                if (userInput.indexOf("quit") < 0) { // Joke Client Admin pressed Enter
-                    connectToServer(servername);
+                if (userInput.indexOf("s") >= 0) {
+                    if (isSecondServerExists) {
+                        isSecondServer = !isSecondServer;
+                        String displayMessage = String.format("Now communicating with: " + (isSecondServer ? (secondServername + ", port " + secondPort) : (firstServername + ", port " + firstPort)));
+                        System.out.println(displayMessage);
+                    } else {
+                        System.out.println("No secondary server being used");
+                    }
+                } else if (userInput.indexOf("quit") < 0) { // Admin Client pressed Enter
+                    if (!isSecondServer) {
+                        mainServername = firstServername;
+                        mainPort = firstPort;
+                    } else {
+                        mainServername = secondServername;
+                        mainPort = secondPort;
+                    }
+                    connectToServer(mainServername, mainPort);
                 }
             }
         } while (userInput.indexOf("quit") < 0); // Taking the joke client admin input until the admin enters quit
         System.out.println("Cancelled by user request.");
     }
 
-    void connectToServer(String serverName) {
+    void connectToServer(String serverName, int port) {
         try {
-            Socket socket = new Socket(serverName, 5050);
-            //System.out.println("\n          Successful connection established with JokeClientAdmin at port 5050");
+            Socket socket = new Socket(serverName, port);
 
             InputStream inStream = socket.getInputStream();
             ObjectInputStream objectInputStream = new ObjectInputStream(inStream);
             AdminData inObject = (AdminData) objectInputStream.readObject();
 
             currentMode = inObject.mode;
-            System.out.println("            Mode changed to : " + inObject.mode);
-            System.out.println("         Closing the connection to the server.\n");
+            System.out.println(serverName + " mode changed to : " + inObject.mode);
             socket.close();
         } catch (ConnectException connectException) {
             System.out.println("\nOh no. The JokeServer refused our connection! Is it running?\n");
@@ -270,12 +306,15 @@ public class JokeServer {
     private static LinkedHashMap<String, String> initProverbs = new LinkedHashMap<>();
     private static List<ClientData> clients = new ArrayList<>();
     private static int maxJokesOrProverbs = 4;
+    private static boolean isSecondServer = false;
 
     public static void main(String[] args) throws Exception {
         int queueLen = 6; // Number of simultaneous requests for Operating System to queue
         int serverPort = 4545;
-        if(args.length == 1) {
+
+        if (args.length == 1 && args[0].equals("secondary")) {
             serverPort = 4546;
+            isSecondServer = true;
         }
         Socket socket;
         System.out.println("Saibaba Garbham's Joke Server 1.0 starting up, listening for Joke Client at port  " + serverPort + ".\n");
@@ -283,7 +322,7 @@ public class JokeServer {
         ServerSocket serverSocket = new ServerSocket(serverPort, queueLen);
         System.out.println("ServerSocket awaiting connections..."); // Waiting for the client to ring the bell
 
-        AdminLooper AL = new AdminLooper();
+        AdminLooper AL = new AdminLooper(isSecondServer);
         Thread t = new Thread(AL);
         t.start();
 
@@ -315,7 +354,7 @@ public class JokeServer {
                 randomizeProverbs(clientData);
             }
             LoadJokesAndProverbs(clientData);
-            new JokeWorker(socket, AL.mode, jokes, proverbs, clientData, inObject).start();
+            new JokeWorker(socket, AL.mode, jokes, proverbs, clientData, inObject, isSecondServer).start();
         }
     }
 
@@ -373,11 +412,12 @@ class JokeWorker extends Thread {
     private int currentIndex;
     private NetworkData inObject;
     private ClientData clientData;
+    private boolean isSecondServer;
 
     private LinkedHashMap<String, String> jokes = new LinkedHashMap<>();
     private LinkedHashMap<String, String> proverbs = new LinkedHashMap<>();
 
-    JokeWorker(Socket s, ModeChanger mode, LinkedHashMap<String, String> jokes, LinkedHashMap<String, String> proverbs, ClientData clientData, NetworkData networkData) {
+    JokeWorker(Socket s, ModeChanger mode, LinkedHashMap<String, String> jokes, LinkedHashMap<String, String> proverbs, ClientData clientData, NetworkData networkData, boolean isSecondServer) {
         this.socket = s;
         this.mode = mode;
         this.jokes = jokes;
@@ -385,6 +425,7 @@ class JokeWorker extends Thread {
         this.limiter = 4;
         this.inObject = networkData;
         this.clientData = clientData;
+        this.isSecondServer = isSecondServer;
     }
 
     public void run() {
@@ -412,7 +453,7 @@ class JokeWorker extends Thread {
                     clientData.setProverbCycleCompleted(true);
                 }
             }
-            setJokeOrProverb(currentIndex, mode.GetMode(), inObject, clientData);
+            setJokeOrProverb(currentIndex, mode.GetMode(), inObject, clientData, isSecondServer);
             inObject.clientId = clientData.getId();
             objectOutputStream.writeObject(inObject); // Send the data back to client
             socket.close();
@@ -423,7 +464,7 @@ class JokeWorker extends Thread {
         }
     }
 
-    void setJokeOrProverb(int index, int mode, NetworkData inObject, ClientData clientData) {
+    void setJokeOrProverb(int index, int mode, NetworkData inObject, ClientData clientData, boolean isSecondServer) {
         if (mode == 0) {
             List<String> jokeKeys = new ArrayList<>(jokes.keySet());
             String key = jokeKeys.get(index);
@@ -436,21 +477,30 @@ class JokeWorker extends Thread {
             clientData.addClientProverb(inObject.jokeOrProverbSentBack);
         }
         System.out.println(inObject.jokeOrProverbSentBack);
+        inObject.jokeOrProverbSentBack = isSecondServer ? "<S2> " + inObject.jokeOrProverbSentBack : inObject.jokeOrProverbSentBack;
     }
 }
 
 class AdminLooper implements Runnable {
     public static boolean adminControlSwitch = true;
     ModeChanger mode = new ModeChanger();
+    private boolean isSecondServer;
+
+    AdminLooper(boolean isSecondServerExists) {
+        this.isSecondServer = isSecondServerExists;
+    }
 
     public void run() {
 
-        int q_len = 6; /* Number of requests for OpSys to queue */
+        int queueLength = 6; /* Number of requests for OpSys to queue */
         int port = 5050;  // We are listening at a different port for Admin clients
+        if(this.isSecondServer) {
+            port = 5051;
+        }
         Socket sock;
 
         try {
-            ServerSocket servsock = new ServerSocket(port, q_len);
+            ServerSocket servsock = new ServerSocket(port, queueLength);
             while (adminControlSwitch) {
                 // wait for the next ADMIN client connection:
                 sock = servsock.accept();
@@ -487,7 +537,6 @@ class JokeClientAdminWorker extends Thread { // Class definition. Extending Thre
 
             objectOutputStream.writeObject(inObject); // Send the admin data back to client
             System.out.println("Mode changed to : " + inObject.mode);
-            System.out.println("Closing the client socket connection...");
             socket.close();
 
         } catch (IOException inpIoException) {
